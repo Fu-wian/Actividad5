@@ -46,8 +46,15 @@
             android:id="@+id/btnTomarFoto"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="📷 Tomar foto"
-            android:layout_marginBottom="8dp"/>
+            android:layout_marginBottom="8dp"
+            android:text="📷 Tomar foto" />
+
+        <Button
+            android:id="@+id/btnImportarFoto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="📷 Galeria" />
 
         <ImageView
             android:id="@+id/imgPreviewFoto"

@@ -8,12 +8,13 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.view.View
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.Toast
 import android.widget.VideoView
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
@@ -39,6 +40,8 @@ class NuevaEntradaActivity : AppCompatActivity() {
     private lateinit var etTitulo:       EditText
     private lateinit var btnAudio:       Button
     private lateinit var btnFoto:        Button
+
+    private lateinit var btnImportarFotos:     Button
     private lateinit var btnVideo:       Button
     private lateinit var btnGuardar:     Button
     private lateinit var imgPreviewFoto: ImageView
@@ -59,10 +62,34 @@ class NuevaEntradaActivity : AppCompatActivity() {
     ) { exito ->
         if (exito) {
             imgPreviewFoto.visibility = View.VISIBLE
-            Glide.with(this).load(fotoUri).centerCrop().into(imgPreviewFoto)
+            Glide.with(this)
+                .load(fotoUri)
+                .centerCrop()
+                .into(imgPreviewFoto)
+
+            Toast.makeText(this, "Foto tomada", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "No se tomó la foto", Toast.LENGTH_SHORT).show()
         }
     }
 
+    private val galeriaLauncher = registerForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uriSeleccionada ->
+        if (uriSeleccionada != null) {
+            val nuevaUri = copiarFotoDesdeGaleria(uriSeleccionada)
+
+            if (nuevaUri != null) {
+                fotoUri = nuevaUri
+                imgPreviewFoto.visibility = View.VISIBLE
+                Glide.with(this).load(fotoUri).centerCrop().into(imgPreviewFoto)
+
+                Toast.makeText(this, "Foto importada", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Error al importar foto", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
     private val videoLauncher = registerForActivityResult(
         ActivityResultContracts.CaptureVideo()
     ) { exito ->
@@ -84,6 +111,7 @@ class NuevaEntradaActivity : AppCompatActivity() {
         etTitulo       = findViewById(R.id.etTitulo)
         btnAudio       = findViewById(R.id.btnGrabarAudio)
         btnFoto        = findViewById(R.id.btnTomarFoto)
+        btnImportarFotos      = findViewById(R.id.btnImportarFoto)
         btnVideo       = findViewById(R.id.btnGrabarVideo)
         btnGuardar     = findViewById(R.id.btnGuardar)
         imgPreviewFoto = findViewById(R.id.imgPreviewFoto)
@@ -91,6 +119,7 @@ class NuevaEntradaActivity : AppCompatActivity() {
 
         btnAudio.setOnClickListener   { onAudioClick() }
         btnFoto.setOnClickListener    { onFotoClick() }
+        btnImportarFotos.setOnClickListener { onImportarFotoClick() }
         btnVideo.setOnClickListener   { onVideoClick() }
         btnGuardar.setOnClickListener { onGuardarClick() }
 
@@ -122,6 +151,7 @@ class NuevaEntradaActivity : AppCompatActivity() {
         }
     }
 
+
     private fun iniciarGrabacion() {
         rutaAudio = "${externalCacheDir?.absolutePath}/audio_${System.currentTimeMillis()}.mp4"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -152,6 +182,43 @@ class NuevaEntradaActivity : AppCompatActivity() {
     private fun onFotoClick() {
         fotoUri = crearUri(Environment.DIRECTORY_PICTURES, "foto", "jpg")
         fotoLauncher.launch(fotoUri!!)
+    }
+
+    // ── imagen ──────────────────────────────────────────────────────────────
+    private fun onImportarFotoClick() {
+        galeriaLauncher.launch(
+            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+        )
+    }
+
+    private fun copiarFotoDesdeGaleria(uriOrigen: Uri): Uri? {
+        val carpetaDestino = File(
+            getExternalFilesDir(Environment.DIRECTORY_PICTURES),
+            "importadas"
+        )
+
+        if (!carpetaDestino.exists()) {
+            carpetaDestino.mkdirs()
+        }
+
+        val archivoDestino = File(
+            carpetaDestino,
+            "foto_importada_${System.currentTimeMillis()}.jpg"
+        )
+
+        return try {
+            contentResolver.openInputStream(uriOrigen)?.use { entrada ->
+                archivoDestino.outputStream().use { salida ->
+                    entrada.copyTo(salida)
+                }
+            }
+
+            Uri.fromFile(archivoDestino)
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 
     // ── Video ─────────────────────────────────────────────────────────────
@@ -199,3 +266,5 @@ class NuevaEntradaActivity : AppCompatActivity() {
         )
     }
 }
+
+
