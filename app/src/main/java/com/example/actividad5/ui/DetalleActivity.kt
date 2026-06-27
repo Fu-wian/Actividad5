@@ -152,6 +152,10 @@ class DetalleActivity : AppCompatActivity() {
             videoView.setOnCompletionListener {
                 Toast.makeText(this, "Video terminado", Toast.LENGTH_SHORT).show()
             }
+            videoView.setOnErrorListener { _, _, _ ->
+                Toast.makeText(this, "No se pudo cargar el video", Toast.LENGTH_SHORT).show()
+                true
+            }
         } else {
             sectionVideo.visibility = View.GONE
         }
@@ -168,10 +172,32 @@ class DetalleActivity : AppCompatActivity() {
     ) {
         player?.release()
 
-        player = MediaPlayer().apply {
-            setDataSource(ruta)
-            prepare()
-            start()
+        try {
+            player = MediaPlayer().apply {
+                setDataSource(ruta)
+
+                setOnErrorListener { _, _, _ ->
+                    Toast.makeText(
+                        this@DetalleActivity,
+                        "Error al reproducir el audio",
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                    detenerActualizacionProgreso()
+                    release()
+                    player = null
+                    btnPlay.text = "▶ Reproducir audio"
+
+                    true // indica que el error fue manejado
+                }
+
+                prepare()
+                start()
+            }
+        } catch (e: Exception) {
+            Toast.makeText(this, "No se pudo cargar el audio", Toast.LENGTH_SHORT).show()
+            player = null
+            return
         }
 
         val duracion = player?.duration ?: 0

@@ -153,9 +153,9 @@ class NuevaEntradaActivity : AppCompatActivity() {
 
 
     private fun iniciarGrabacion() {
-        rutaAudio = "${externalCacheDir?.absolutePath}/audio_${System.currentTimeMillis()}.mp4"
+        rutaAudio = "${getExternalFilesDir(Environment.DIRECTORY_MUSIC)?.absolutePath}/audio_${System.currentTimeMillis()}.mp4"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            recorder  = MediaRecorder(this).apply {
+            recorder = MediaRecorder(this).apply {
                 setAudioSource(MediaRecorder.AudioSource.MIC)
                 setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
                 setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
@@ -164,8 +164,8 @@ class NuevaEntradaActivity : AppCompatActivity() {
                 start()
             }
         }
-        grabando       = true
-        btnAudio.text  = "⏹ Detener grabación"
+        grabando      = true
+        btnAudio.text = "⏹ Detener grabación"
     }
 
     private fun detenerGrabacionSiActiva() {
