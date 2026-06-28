@@ -1,6 +1,8 @@
 package com.example.actividad5.repository
 
 import android.content.Context
+import android.net.Uri
+import android.os.Environment
 import androidx.core.net.toUri
 import com.example.actividad5.data.DiarioDatabase
 import com.example.actividad5.data.Entrada
@@ -41,7 +43,10 @@ class EntradaRepository(context: Context) {
 
             when (uri.scheme) {
                 "content" -> {
-                    appContext.contentResolver.delete(uri, null, null)
+                    val archivo = resolverArchivoDesdeContentUri(uri)
+                    if (archivo != null && archivo.exists()) {
+                        archivo.delete()
+                    }
                 }
                 "file" -> {
                     val archivo = File(uri.path ?: return)
@@ -58,6 +63,30 @@ class EntradaRepository(context: Context) {
             }
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    private fun resolverArchivoDesdeContentUri(uri: Uri): File? {
+        return try {
+            val ultimoSegmento = uri.lastPathSegment ?: return null
+            val nombreArchivo = File(ultimoSegmento).name
+
+            val carpeta = when {
+                uri.pathSegments.contains("pictures") ->
+                    appContext.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+                uri.pathSegments.contains("movies") ->
+                    appContext.getExternalFilesDir(Environment.DIRECTORY_MOVIES)
+                else -> null
+            } ?: return null
+
+            val candidatos = listOf(
+                File(carpeta, nombreArchivo),
+                File(carpeta, "importadas/$nombreArchivo")
+            )
+
+            candidatos.firstOrNull { it.exists() }
+        } catch (e: Exception) {
+            null
         }
     }
 }
